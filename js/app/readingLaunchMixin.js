@@ -31,7 +31,21 @@
             const manifest = (typeof window !== 'undefined' && window.__READING_EXAM_MANIFEST__)
                 ? window.__READING_EXAM_MANIFEST__
                 : null;
-            const manifestEntry = manifest && exam.id ? manifest[exam.id] : null;
+            const rawExamId = typeof exam.id === 'string'
+                ? exam.id.trim().toLowerCase()
+                : '';
+            const canonicalizeExamId = function (value) {
+                return String(value || '').toLowerCase().replace(/-(\d+)$/, function (_, number) {
+                    return '-' + String(Number(number));
+                });
+            };
+            const manifestEntry = manifest && rawExamId
+                ? (manifest[rawExamId] || Object.keys(manifest).map(function (key) {
+                    return manifest[key];
+                }).find(function (entry) {
+                    return entry && canonicalizeExamId(entry.examId || entry.dataKey) === canonicalizeExamId(rawExamId);
+                }))
+                : null;
             if (!manifestEntry || !(manifestEntry.dataKey || manifestEntry.examId)) {
                 return null;
             }
